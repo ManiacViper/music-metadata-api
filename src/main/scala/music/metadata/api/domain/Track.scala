@@ -16,11 +16,11 @@ object Genre {
     case "Rock" => Right(Rock)
     case "Disco" => Right(Disco)
     case "Hiphop" => Right(Hiphop)
-    case _ => Left("unknown genre")
+    case _ => Left("genre not supported")
   }
 }
 case object Rock extends Genre
 case object Disco extends Genre
 case object Hiphop extends Genre
-final case class Track(id: UUID, title: String, genre: Genre, lengthInSeconds: Long, artist: UUID)
+final case class Track(id: UUID, title: String, genre: Genre, lengthInSeconds: Long, artistId: UUID)
 //assuming there is only 1 primary artist for each track for now, there might be collaborators also which maybe a new field in the future
