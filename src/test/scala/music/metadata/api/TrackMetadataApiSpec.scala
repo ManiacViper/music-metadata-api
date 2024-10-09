@@ -33,10 +33,10 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
     }
 
     "return a 400" when {
-      "genre from client is invalid" in {
-        val invalidGenre = "invalid-genre"
+      "genre is not supported" in {
+        val unsupportedGenre = "Jazz"
         val newTrack: NewTrackRequest =
-          NewTrackRequest("some title", invalidGenre, (2.minutes + 45.seconds).toSeconds, UUID.randomUUID())
+          NewTrackRequest("some title", unsupportedGenre, (2.minutes + 45.seconds).toSeconds, UUID.randomUUID())
 
         val result: Response[IO] = newTrackRoute(newTrack.asJson)
 
@@ -51,7 +51,7 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
         resultBody mustBe expectedMsg
       }
 
-      "artist id from client is invalid format" in {
+      "artist id is invalid format" in {
         val invalidArtistId = "invalid-artist-id"
         val newTrack: TestNewTrackRequest =
           TestNewTrackRequest("some title", Hiphop.toString, (2.minutes + 45.seconds).toSeconds, invalidArtistId)
