@@ -14,7 +14,7 @@ import NewTrackRequest.decodeUUID
 
 object TrackMetadataApi {
 
-  def routes[F[_]: Concurrent](trackService: TrackService[F]): HttpRoutes[F] = {
+  def routes[F[_]: Concurrent](trackService: TrackRepository[F]): HttpRoutes[F] = {
 
     val dsl = new Http4sDsl[F]{}
     import dsl._

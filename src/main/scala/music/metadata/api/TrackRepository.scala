@@ -5,13 +5,13 @@ import cats.syntax.applicative._
 import music.metadata.api.domain.Track
 
 
-trait TrackService[F[_]]{
+trait TrackRepository[F[_]]{
   def create(newTrack: Track): F[Unit]
 }
 
-object TrackService {
+object TrackRepository {
 
-  def impl[F[_]: Applicative]: TrackService[F] = new TrackService[F]{
+  def impl[F[_]: Applicative]: TrackRepository[F] = new TrackRepository[F]{
     def create(newTrack: Track): F[Unit] =
         ().pure[F]
   }

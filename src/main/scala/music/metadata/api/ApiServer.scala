@@ -10,7 +10,7 @@ import org.http4s.server.middleware.Logger
 object ApiServer {
 
   def run[F[_]: Async: Network]: F[Nothing] = {
-    val trackService = TrackService.impl[F]
+    val trackService = TrackRepository.impl[F]
     val httpApp = (TrackMetadataApi.routes[F](trackService)).orNotFound
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 

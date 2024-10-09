@@ -73,7 +73,7 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
 
   private[this] def newTrackRoute(newTrackReq: Json): Response[IO] = {
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
-    val trackService = TrackService.impl[IO]
+    val trackService = TrackRepository.impl[IO]
     TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 }
