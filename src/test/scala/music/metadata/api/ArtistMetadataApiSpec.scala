@@ -11,7 +11,9 @@ import cats.effect.unsafe.implicits.global
 import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.generic.auto._
+import music.metadata.api.domain.Artist
 import music.metadata.api.repository.ArtistRepository
+import music.metadata.api.service.ArtistService
 import org.http4s.circe.CirceEntityCodec._
 
 import java.util.UUID
@@ -63,11 +65,41 @@ class ArtistMetadataApiSpec extends AnyWordSpec with Matchers {
       }
     }
 
+    "return error" when {
+      "there is an error with saving the new aliases" in {
+        val existingArtistId = UUID.fromString("916e2cff-a76a-45f5-b373-c49d1c46828f")
+        val moreArtistAliases = ArtistAliasesRequestBody(aliases = Seq("missy", "jacky"))
+        val resultWithMore: Response[IO] = failedNewArtistAliasesRoute(existingArtistId, moreArtistAliases.asJson)
+
+        val actual = resultWithMore.as[Json].unsafeRunSync()
+
+        val _ = resultWithMore.status mustBe Status.InternalServerError
+        val Right(expected) = parse(
+          s"""
+             |{
+             | "message" : "could not save aliases for artist [id=$existingArtistId]"
+             |}
+             |""".stripMargin)
+        actual mustBe expected
+      }
+    }
   }
+
+  private[this] def failedNewArtistAliasesRoute(id: UUID, newArtistAliases: Json): Response[IO] = {
+    val newAliasesRequest = Request[IO](Method.PATCH, uri"/artist"/id.toString).withEntity(newArtistAliases)
+    val failingRepository = new ArtistRepository[IO] {
+      override def addAliases(id: UUID, newAliases: Seq[String]): IO[Option[Artist]] =
+        IO.raiseError(new RuntimeException("something went wrong"))
+    }
+    val service = ArtistService.impl(failingRepository)
+    ArtistMetadataApi.routes[IO](service).orNotFound(newAliasesRequest)
+  }.unsafeRunSync()
 
   private[this] def newArtistAliasesRoute(id: UUID, newArtistAliases: Json): Response[IO] = {
     val newAliasesRequest = Request[IO](Method.PATCH, uri"/artist"/id.toString).withEntity(newArtistAliases)
-    ArtistMetadataApi.routes[IO](ArtistRepository.impl[IO]).orNotFound(newAliasesRequest)
+    val repository = ArtistRepository.impl[IO]
+    val service = ArtistService.impl(repository)
+    ArtistMetadataApi.routes(service).orNotFound(newAliasesRequest)
   }.unsafeRunSync()
 
 }

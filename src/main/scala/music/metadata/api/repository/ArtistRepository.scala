@@ -1,7 +1,6 @@
 package music.metadata.api.repository
 
-import cats.Applicative
-import cats.implicits.catsSyntaxApplicativeId
+import cats.effect.Sync
 import music.metadata.api.domain.Artist
 
 import java.util.UUID
@@ -23,14 +22,13 @@ object ArtistRepository {
     artist3.id -> artist3
   )
 
-  def impl[F[_]: Applicative]: ArtistRepository[F] = new ArtistRepository[F] {
-    def addAliases(id: UUID, newAliases: Seq[String]): F[Option[Artist]] = {
-      val result = for {
+  def impl[F[_]: Sync]: ArtistRepository[F] = new ArtistRepository[F] {
+    def addAliases(id: UUID, newAliases: Seq[String]): F[Option[Artist]] = Sync[F].delay {
+      for {
         artist <- artistMap.get(id)
         updatedArtist = artist.copy(aliases = artist.aliases ++ newAliases)
         _ = artistMap.update(id, updatedArtist)
       } yield updatedArtist
-      result.pure[F]
     }
   }
 
