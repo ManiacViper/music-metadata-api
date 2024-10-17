@@ -9,6 +9,7 @@ import cats.syntax.applicativeError._
 
 import java.util.UUID
 
+//TODO: Unit Testing for this class
 trait ArtistService[F[_]] {
   def handleAddingAliases(id: UUID, aliases: Seq[String]): F[Either[NonFatalError, Artist]]
 }
