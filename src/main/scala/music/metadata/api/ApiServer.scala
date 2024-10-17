@@ -3,15 +3,17 @@ package music.metadata.api
 import cats.effect.Async
 import com.comcast.ip4s._
 import fs2.io.net.Network
+import music.metadata.api.repository.ArtistRepository
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.Logger
+import cats.syntax.semigroupk._
 
 object ApiServer {
 
   def run[F[_]: Async: Network]: F[Nothing] = {
     val trackService = TrackRepository.impl[F]
-    val httpApp = (TrackMetadataApi.routes[F](trackService)).orNotFound
+    val httpApp = (TrackMetadataApi.routes[F](trackService) <+> ArtistMetadataApi.routes[F](ArtistRepository.impl[F])).orNotFound
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
     for {
