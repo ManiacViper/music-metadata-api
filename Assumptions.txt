@@ -1,0 +1,3 @@
+- edit artist name indicates to me that we dont need a create new artist mechanism as they already exist in this new system and the data will be provided to the system on launch,
+    - so im assuming editing the artist will be enough as an endpoint
+    - also im assuming we do not want to edit the aliases that already exist in the system, only add new alias or aliases according to the specification document
