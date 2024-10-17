@@ -63,7 +63,7 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
         val Right(expectedMsg) = parse(
           """
             |{
-            |  "message" : "DecodingFailure at .artistId: uuid format is invalid"
+            |  "message" : "DecodingFailure at .artistId: Got value '\"invalid-artist-id\"' with wrong type, expecting string"
             |}
             |""".stripMargin)
         resultBody mustBe expectedMsg
