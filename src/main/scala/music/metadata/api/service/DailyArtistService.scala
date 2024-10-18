@@ -1,11 +1,12 @@
 package music.metadata.api.service
 
 import music.metadata.api.domain.Artist
+import music.metadata.api.http.model.{DataInvalid, DataNotFound, NonFatalError}
 
 import java.time.{LocalDate, ZoneOffset}
 
 trait DailyArtistService {
-  def getDailyArtist(artists: Vector[Artist], date: LocalDate): Option[Artist]
+  def getDailyArtist(artists: Vector[Artist], date: LocalDate): Either[NonFatalError, Artist]
 }
 object DailyArtistService {
 //  private val maxIndex = artists.size - 1
@@ -13,20 +14,23 @@ object DailyArtistService {
   def impl(): DailyArtistService = new DailyArtistService {
     private var currentIndex = 0
     private var storedDate: LocalDate = LocalDate.now(ZoneOffset.UTC)
+    private val artistNotFound = DataNotFound(s"artist not found")
 
-    override def getDailyArtist(artists: Vector[Artist], date: LocalDate): Option[Artist] = {
-      lazy val maxIndex = artists.size - 1
+    override def getDailyArtist(artists: Vector[Artist], date: LocalDate): Either[NonFatalError, Artist] = {
       if (date == storedDate) {
-        artists.lift(currentIndex) //return same artist for the same day
+        artists.lift(currentIndex).toRight(artistNotFound) //return the same artist for the same day
+      } else if(date.isBefore(storedDate)) {
+        Left(DataInvalid(s"[date=$date] cannot be in the past"))
       } else {
+        val maxIndex = artists.size - 1
         if (currentIndex < maxIndex) {
-          currentIndex = currentIndex + 1 //return different artist for the next day
+          currentIndex = currentIndex + 1 //return different artist for a different date
           storedDate = date
-          artists.lift(currentIndex)
+          artists.lift(currentIndex).toRight(artistNotFound)
         } else {
           currentIndex = 0 //reset to first one
           storedDate = date
-          artists.lift(currentIndex)
+          artists.lift(currentIndex).toRight(artistNotFound)
         }
       }
     }
