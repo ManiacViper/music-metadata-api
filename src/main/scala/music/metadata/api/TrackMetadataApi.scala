@@ -41,7 +41,7 @@ object TrackMetadataApi {
                       case error: TransformingError =>
                         BadRequest(error)
                       //TODO: 2 tests are missing
-                      case error: DataNotFound =>
+                      case error: DataNotFound => //planning to have an artist id check when creating a new track
                         NotFound(error)
                       case _: UnexpectedError =>
                         InternalServerError(UnexpectedError("new track could not be saved"))
