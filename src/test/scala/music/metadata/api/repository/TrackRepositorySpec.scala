@@ -12,7 +12,7 @@ class TrackRepositorySpec extends AnyWordSpec with Matchers {
 
   "TrackRepository.create and .get" should {
     "store a track and return a track" when {
-      "new track is passed and we can retrieve it" in {
+      "new track is passed and we can retrieve it by artist id" in {
         val newTrack = Track(UUID.randomUUID(),"some-title", Hiphop, 100, UUID.randomUUID())
         val repository = TrackRepository.impl[IO](List.empty)
 
@@ -25,7 +25,7 @@ class TrackRepositorySpec extends AnyWordSpec with Matchers {
     }
 
     "not retrieve a track" when {
-      "a track is not stored for an existing artist id" in {
+      "a track is not stored for an artist id" in {
         val newTrack = Track(UUID.randomUUID(),"some-title", Hiphop, 100, UUID.randomUUID())
         val repository = TrackRepository.impl[IO](List.empty)
 
