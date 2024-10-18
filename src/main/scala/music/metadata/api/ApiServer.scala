@@ -7,7 +7,7 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.middleware.Logger
 import cats.syntax.semigroupk._
 import music.metadata.api.repository.{ArtistRepository, TrackRepository}
-import music.metadata.api.service.{ArtistService, TrackService}
+import music.metadata.api.service.{ArtistService, DailyArtistService, TrackService}
 
 object ApiServer {
 
@@ -15,7 +15,7 @@ object ApiServer {
     val trackRepository = TrackRepository.impl[F](ArtistRepository.existingArtists.map(_.id))
     val trackService = TrackService.impl[F](trackRepository)
     val artistRepository = ArtistRepository.impl[F](ArtistRepository.existingArtists)
-    val artistService = ArtistService.impl[F](artistRepository)
+    val artistService = ArtistService.impl[F](artistRepository, DailyArtistService.impl())
     val httpApp = (TrackMetadataApi.routes[F](trackService) <+> ArtistMetadataApi.routes[F](artistService)).orNotFound
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 

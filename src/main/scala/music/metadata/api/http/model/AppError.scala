@@ -1,5 +1,7 @@
 package music.metadata.api.http.model
 
+
+//TODO: re-organise errors
 sealed trait AppError extends Throwable {
   val message: String
 }
