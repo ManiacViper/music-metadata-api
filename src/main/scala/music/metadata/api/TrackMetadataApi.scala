@@ -3,7 +3,7 @@ package music.metadata.api
 import cats.effect.Concurrent
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-import music.metadata.api.http.model.{AppError, DecodingError, DataNotFound, NewTrackRequest, NewTrackResponse, TracksResponse, TransformingError, UnexpectedError}
+import music.metadata.api.http.model.{AppError, DataInvalid, DataNotFound, DecodingError, NewTrackRequest, NewTrackResponse, TracksResponse, TransformingError, UnexpectedError}
 import cats.syntax.functor._
 import cats.syntax.flatMap._
 import cats.syntax.either._
@@ -42,6 +42,8 @@ object TrackMetadataApi {
                       case error: TransformingError =>
                         BadRequest(error)
                       //TODO: 2 tests are missing
+                      case error: DataInvalid =>
+                        BadRequest(error)
                       case error: DataNotFound =>
                         NotFound(error)
                       case _: UnexpectedError =>

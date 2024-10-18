@@ -13,12 +13,12 @@ import io.circe.syntax._
 import io.circe.generic.auto._
 import music.metadata.api.domain.Artist
 import music.metadata.api.repository.ArtistRepository
-import music.metadata.api.service.ArtistService
+import music.metadata.api.service.{ArtistService, DailyArtistService}
 import org.http4s.circe.CirceEntityCodec._
 
 import java.util.UUID
 
-class ArtistMetadataApiSpec extends AnyWordSpec with Matchers {
+class UpdateArtistAliasesMetadataApiSpec extends AnyWordSpec with Matchers {
 
 
   "ArtistMetadataApi.routes" should {
@@ -92,14 +92,16 @@ class ArtistMetadataApiSpec extends AnyWordSpec with Matchers {
     val failingRepository = new ArtistRepository[IO] {
       override def addAliases(id: UUID, newAliases: Seq[String]): IO[Option[Artist]] =
         IO.raiseError(new RuntimeException("something went wrong"))
+
+      override def getAllArtists: IO[Seq[Artist]] = ???
     }
-    val service = ArtistService.impl(failingRepository)
+    val service = ArtistService.impl(failingRepository, DailyArtistService.impl())
     ArtistMetadataApi.routes[IO](service).orNotFound(newAliasesRequest)
   }.unsafeRunSync()
 
   private[this] def newArtistAliasesRoute(repository: ArtistRepository[IO])(id: UUID, newArtistAliases: Json): Response[IO] = {
     val newAliasesRequest = Request[IO](Method.PATCH, uri"/artist"/id.toString).withEntity(newArtistAliases)
-    val service = ArtistService.impl(repository)
+    val service = ArtistService.impl(repository, DailyArtistService.impl())
     ArtistMetadataApi.routes(service).orNotFound(newAliasesRequest)
   }.unsafeRunSync()
 

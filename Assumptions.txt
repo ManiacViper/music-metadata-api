@@ -5,3 +5,6 @@
 - edit artist name indicates to me that we don't need a create new artist mechanism as they already exist in this new system and the data will be provided to the system on launch,
     - so im assuming updating the artist aliases will be enough as an endpoint
     - also im assuming we do not want to edit the aliases that already exist in the system, only add new alias or aliases according to the specification document
+
+- artist of the day will only change when the passed date is the next day to the stored date in the system
+- date passed for daily artist will not be in the past
