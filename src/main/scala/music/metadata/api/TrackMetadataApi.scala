@@ -3,14 +3,17 @@ package music.metadata.api
 import cats.effect.Concurrent
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-import music.metadata.api.http.model.{AppError, BodyDecodingError, DataNotFound, NewTrackRequest, NewTrackResponse, TransformingError, UnexpectedError}
+import music.metadata.api.http.model.{AppError, BodyDecodingError, DataNotFound, NewTrackRequest, NewTrackResponse, TrackResponse, TracksResponse, TransformingError, UnexpectedError}
 import cats.syntax.functor._
 import cats.syntax.flatMap._
 import cats.syntax.either._
 import cats.syntax.applicativeError._
 import io.circe.generic.auto._
+import music.metadata.api.domain.{Disco, Hiphop}
 import music.metadata.api.repository.TrackRepository
 import org.http4s.circe.CirceEntityCodec._
+
+import java.util.UUID
 
 object TrackMetadataApi {
 
@@ -47,6 +50,16 @@ object TrackMetadataApi {
                     }
                 }
         } yield resp
+      case GET -> Root / "tracks" / UUIDVar(artistId) =>
+        Ok(
+          TracksResponse(
+            artistId,
+            List(
+              TrackResponse(UUID.randomUUID(),"some-title-1", Hiphop, 200),
+              TrackResponse(UUID.randomUUID(),"some-title-2", Disco, 100)
+            )
+          )
+        )
     }
   }
 }

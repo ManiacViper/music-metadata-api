@@ -89,8 +89,11 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
       }
     }
   }
+}
 
-  private[this] def failedNewTrackRoute(newTrackReq: Json): Response[IO] = {
+object TrackMetadataApiSpec {
+
+  def failedNewTrackRoute(newTrackReq: Json): Response[IO] = {
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
     val trackService = new TrackRepository[IO] {
       override def create(newTrack: Track): IO[UUID] =
@@ -100,15 +103,12 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
     TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
-  private[this] def newTrackRoute(newTrackReq: Json): Response[IO] = {
+  def newTrackRoute(newTrackReq: Json): Response[IO] = {
     println(newTrackReq.spaces2)
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
     val trackService = TrackRepository.impl[IO]
     TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)
   }.unsafeRunSync()
-}
-
-object TrackMetadataApiSpec {
 
   final case class TestNewTrackRequest(title: String, genre: String, lengthInSeconds: Long, artistId: String)
 
