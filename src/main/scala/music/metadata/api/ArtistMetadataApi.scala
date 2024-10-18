@@ -16,7 +16,6 @@ import java.util.UUID
 object ArtistMetadataApi {
 
   def routes[F[_]: Concurrent](service: ArtistService[F]): HttpRoutes[F] = {
-
     val dsl = new Http4sDsl[F]{}
     import dsl._
 

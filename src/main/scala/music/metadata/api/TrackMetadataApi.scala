@@ -9,6 +9,7 @@ import cats.syntax.flatMap._
 import cats.syntax.either._
 import cats.syntax.applicativeError._
 import io.circe.generic.auto._
+import music.metadata.api.repository.TrackRepository
 import org.http4s.circe.CirceEntityCodec._
 
 object TrackMetadataApi {

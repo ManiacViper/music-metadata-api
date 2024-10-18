@@ -1,4 +1,5 @@
-package music.metadata.api
+package music.metadata.api.repository
+
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import music.metadata.api.domain.{Hiphop, Track}

@@ -1,4 +1,4 @@
-package music.metadata.api
+package music.metadata.api.repository
 
 import cats.effect.Sync
 import music.metadata.api.domain.Track

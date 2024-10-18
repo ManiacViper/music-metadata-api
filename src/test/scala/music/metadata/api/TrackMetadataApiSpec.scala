@@ -12,6 +12,7 @@ import org.http4s.circe.CirceEntityCodec._
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import music.metadata.api.TrackMetadataApiSpec._
+import music.metadata.api.repository.TrackRepository
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

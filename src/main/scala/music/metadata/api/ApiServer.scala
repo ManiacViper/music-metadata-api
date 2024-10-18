@@ -6,7 +6,7 @@ import fs2.io.net.Network
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.middleware.Logger
 import cats.syntax.semigroupk._
-import music.metadata.api.repository.ArtistRepository
+import music.metadata.api.repository.{ArtistRepository, TrackRepository}
 import music.metadata.api.service.ArtistService
 
 object ApiServer {
