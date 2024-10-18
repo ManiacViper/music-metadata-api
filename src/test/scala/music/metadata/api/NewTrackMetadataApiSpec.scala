@@ -11,17 +11,18 @@ import io.circe.generic.auto._
 import org.http4s.circe.CirceEntityCodec._
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
-import music.metadata.api.TrackMetadataApiSpec._
+import music.metadata.api.NewTrackMetadataApiSpec._
 import music.metadata.api.repository.{ArtistRepository, TrackRepository}
+import music.metadata.api.service.TrackService
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.util.UUID
 import scala.concurrent.duration._
 
-class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
+class NewTrackMetadataApiSpec extends AnyWordSpec with Matchers {
 
-  "TrackMetadataApi.routes" should {
+  "TrackMetadataApi.newTrack route" should {
     "return a 201" when {
       "a new track is created" in {
         val newTrack: NewTrackRequest = NewTrackRequest("some title", Hiphop.toString, (2.minutes + 45.seconds).toSeconds, UUID.randomUUID())
@@ -91,23 +92,26 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
   }
 }
 
-object TrackMetadataApiSpec {
+object NewTrackMetadataApiSpec {
 
   def failedNewTrackRoute(newTrackReq: Json): Response[IO] = {
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
-    val trackService = new TrackRepository[IO] {
+    val trackRepository = new TrackRepository[IO] {
       override def create(newTrack: Track): IO[UUID] =
         IO.raiseError(new RuntimeException("something went wrong"))
       override def get(artistId: UUID): IO[Seq[Track]] = ???
     }
-    TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)
+    val service = TrackService.impl(trackRepository)
+
+    TrackMetadataApi.routes(trackRepository, service).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
   def newTrackRoute(newTrackReq: Json): Response[IO] = {
     println(newTrackReq.spaces2)
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
     val trackRepository = TrackRepository.impl[IO](ArtistRepository.existingArtists.map(_.id))
-    TrackMetadataApi.routes(trackRepository).orNotFound(newTrackRequest)
+    val service = TrackService.impl(trackRepository)
+    TrackMetadataApi.routes(trackRepository, service).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
   final case class TestNewTrackRequest(title: String, genre: String, lengthInSeconds: Long, artistId: String)

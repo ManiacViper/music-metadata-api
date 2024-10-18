@@ -29,6 +29,7 @@ object TrackRepository {
         }
       }.flatMap {
         case Some(_) => Sync[F].pure(newTrack.id)
+        //TODO: test None
         case None => Sync[F].raiseError(new RuntimeException(s"could not store track [id=${newTrack.id}]"))
       }
 
