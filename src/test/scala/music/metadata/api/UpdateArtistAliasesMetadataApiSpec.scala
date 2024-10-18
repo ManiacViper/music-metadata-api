@@ -92,6 +92,8 @@ class UpdateArtistAliasesMetadataApiSpec extends AnyWordSpec with Matchers {
     val failingRepository = new ArtistRepository[IO] {
       override def addAliases(id: UUID, newAliases: Seq[String]): IO[Option[Artist]] =
         IO.raiseError(new RuntimeException("something went wrong"))
+
+      override def getAllArtists: IO[Seq[Artist]] = ???
     }
     val service = ArtistService.impl(failingRepository)
     ArtistMetadataApi.routes[IO](service).orNotFound(newAliasesRequest)

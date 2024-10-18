@@ -9,13 +9,14 @@ import cats.syntax.applicativeError._
 
 import java.util.UUID
 
-//TODO: Unit Testing for this class
 trait ArtistService[F[_]] {
   def handleAddingAliases(id: UUID, aliases: Seq[String]): F[Either[NonFatalError, Artist]]
 }
 
 object ArtistService {
   def impl[F[_]](repository: ArtistRepository[F])(implicit ME: MonadError[F, Throwable]): ArtistService[F] = new ArtistService[F] {
+
+    //TODO: Unit Testing for this method
     def handleAddingAliases(id: UUID, newAliases: Seq[String]): F[Either[NonFatalError, Artist]] =
       (for {
         maybeAdded <- repository.addAliases(id, newAliases).attemptT.leftMap { _ =>

@@ -63,19 +63,19 @@ class DailyArtistMetadataApiSpec extends AnyWordSpec with Matchers {
     "return error" ignore {
       implicit val failedRepository: ArtistRepository[IO] = new ArtistRepository[IO] {
         override def addAliases(id: UUID, newAliases: Seq[String]): IO[Option[Artist]] = ???
+        override   def getAllArtists: IO[Seq[Artist]] =
+          IO.raiseError(new RuntimeException("something went wrong"))
       }
       "there is an error with saving the new aliases" in {
         val date = LocalDate.now()
         val resultWithMore: Response[IO] = dailyArtistRoute(date.toString)
         val actual = resultWithMore.as[Json].unsafeRunSync()
-        val _ = resultWithMore.status mustBe Status.Ok
+        val _ = resultWithMore.status mustBe Status.InternalServerError
 
         val Right(expected) = parse(
           """
             |{
-            | "id": "5457804f-f9df-47e1-bc2b-250dceef9093",
-            | "name": "some-artist-1",
-            | "aliases": ["alias-1", "alias-2"]
+            | "message": ""
             |}
             |""".stripMargin)
         actual mustBe expected

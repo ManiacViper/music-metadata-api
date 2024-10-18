@@ -8,6 +8,7 @@ import scala.collection.concurrent.TrieMap
 
 trait ArtistRepository[F[_]] {
   def addAliases(id: UUID, newAliases: Seq[String]): F[Option[Artist]]
+  def getAllArtists: F[Seq[Artist]]
 }
 
 object ArtistRepository {
@@ -23,6 +24,7 @@ object ArtistRepository {
       existingArtistIds
         .foldLeft(TrieMap.empty[UUID, Artist]) { case (trieMapAcc, artist) => trieMapAcc.update(artist.id,artist); trieMapAcc}
 
+
     def addAliases(id: UUID, newAliases: Seq[String]): F[Option[Artist]] = Sync[F].delay {
       for {
         artist <- artistMap.get(id)
@@ -30,6 +32,9 @@ object ArtistRepository {
         _ = artistMap.update(id, updatedArtist)
       } yield updatedArtist
     }
+
+    override def getAllArtists: F[Seq[Artist]] =
+      Sync[F].delay(artistMap.values.toSeq)
   }
 
 }
