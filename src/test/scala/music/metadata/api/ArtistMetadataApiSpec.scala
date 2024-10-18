@@ -23,14 +23,15 @@ class ArtistMetadataApiSpec extends AnyWordSpec with Matchers {
 
   "ArtistMetadataApi.routes" should {
     "add artist aliases" when {
+      val repository = ArtistRepository.impl[IO](ArtistRepository.existingArtists)
       "one or more artist aliases are provided" in {
         val existingArtistId = UUID.fromString("916e2cff-a76a-45f5-b373-c49d1c46828f")
         val newArtistAliases = ArtistAliasesRequestBody(aliases = Seq("zorro", "eminem"))
-        val result: Response[IO] = newArtistAliasesRoute(existingArtistId, newArtistAliases.asJson)
+        val result: Response[IO] = newArtistAliasesRoute(repository)(existingArtistId, newArtistAliases.asJson)
         val _ = result.status mustBe Status.Ok
 
         val moreArtistAliases = ArtistAliasesRequestBody(aliases = Seq("missy", "jacky"))
-        val resultWithMore: Response[IO] = newArtistAliasesRoute(existingArtistId, moreArtistAliases.asJson)
+        val resultWithMore: Response[IO] = newArtistAliasesRoute(repository)(existingArtistId, moreArtistAliases.asJson)
         val actual = resultWithMore.as[Json].unsafeRunSync()
         val _ = resultWithMore.status mustBe Status.Ok
 
@@ -47,10 +48,11 @@ class ArtistMetadataApiSpec extends AnyWordSpec with Matchers {
     }
 
     "return artist not found" when {
+      val repository = ArtistRepository.impl[IO](ArtistRepository.existingArtists)
       "artist does not exist" in {
         val nonExistingArtistId = UUID.randomUUID()
         val moreArtistAliases = ArtistAliasesRequestBody(aliases = Seq("missy", "jacky"))
-        val resultWithMore: Response[IO] = newArtistAliasesRoute(nonExistingArtistId, moreArtistAliases.asJson)
+        val resultWithMore: Response[IO] = newArtistAliasesRoute(repository)(nonExistingArtistId, moreArtistAliases.asJson)
 
         val actual = resultWithMore.as[Json].unsafeRunSync()
 
@@ -95,9 +97,8 @@ class ArtistMetadataApiSpec extends AnyWordSpec with Matchers {
     ArtistMetadataApi.routes[IO](service).orNotFound(newAliasesRequest)
   }.unsafeRunSync()
 
-  private[this] def newArtistAliasesRoute(id: UUID, newArtistAliases: Json): Response[IO] = {
+  private[this] def newArtistAliasesRoute(repository: ArtistRepository[IO])(id: UUID, newArtistAliases: Json): Response[IO] = {
     val newAliasesRequest = Request[IO](Method.PATCH, uri"/artist"/id.toString).withEntity(newArtistAliases)
-    val repository = ArtistRepository.impl[IO](ArtistRepository.existingArtists)
     val service = ArtistService.impl(repository)
     ArtistMetadataApi.routes(service).orNotFound(newAliasesRequest)
   }.unsafeRunSync()
