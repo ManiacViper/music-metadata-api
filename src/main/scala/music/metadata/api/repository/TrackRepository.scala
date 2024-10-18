@@ -1,7 +1,6 @@
-package music.metadata.api
+package music.metadata.api.repository
 
-import cats.Applicative
-import cats.syntax.applicative._
+import cats.effect.Sync
 import music.metadata.api.domain.Track
 
 import java.util.UUID
@@ -16,13 +15,13 @@ trait TrackRepository[F[_]]{
 object TrackRepository {
   private val trackMap: TrieMap[UUID, Track] = TrieMap.empty
 
-  def impl[F[_]: Applicative]: TrackRepository[F] = new TrackRepository[F]{
-    def create(newTrack: Track): F[UUID] = {
+  def impl[F[_]: Sync]: TrackRepository[F] = new TrackRepository[F]{
+    def create(newTrack: Track): F[UUID] = Sync[F].delay {
       trackMap.update(newTrack.id, newTrack)
-      (newTrack.id).pure[F]
+      newTrack.id
     }
 
     override def get(newTrack: UUID): F[Option[Track]] =
-      trackMap.get(newTrack).pure[F]
+      Sync[F].delay(trackMap.get(newTrack))
   }
 }

@@ -1,0 +1,5 @@
+- assuming no collaborations for tracks between multiple artists for this prototype at least, but in the real world more than one artist produce a track sometimes
+- also assuming that artists can be on the system without tracks but each track needs to be associated to an artist
+- edit artist name indicates to me that we don't need a create new artist mechanism as they already exist in this new system and the data will be provided to the system on launch,
+    - so im assuming updating the artist aliases will be enough as an endpoint
+    - also im assuming we do not want to edit the aliases that already exist in the system, only add new alias or aliases according to the specification document

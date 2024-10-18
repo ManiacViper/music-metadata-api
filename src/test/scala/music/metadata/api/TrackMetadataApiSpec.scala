@@ -5,13 +5,14 @@ import cats.effect.unsafe.implicits.global
 import io.circe.Json
 import org.http4s._
 import org.http4s.implicits._
-import music.metadata.api.domain.Hiphop
+import music.metadata.api.domain.{Hiphop, Track}
 import music.metadata.api.http.model.NewTrackRequest
 import io.circe.generic.auto._
 import org.http4s.circe.CirceEntityCodec._
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import music.metadata.api.TrackMetadataApiSpec._
+import music.metadata.api.repository.TrackRepository
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -63,7 +64,25 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
         val Right(expectedMsg) = parse(
           """
             |{
-            |  "message" : "DecodingFailure at .artistId: uuid format is invalid"
+            |  "message" : "DecodingFailure at .artistId: Got value '\"invalid-artist-id\"' with wrong type, expecting string"
+            |}
+            |""".stripMargin)
+        resultBody mustBe expectedMsg
+      }
+    }
+
+    "return 500" when {
+      "there is an unexpected problem saving new track" in {
+        val newTrack: NewTrackRequest = NewTrackRequest("some title", Hiphop.toString, (2.minutes + 45.seconds).toSeconds, UUID.randomUUID())
+
+        val result: Response[IO] = failedNewTrackRoute(newTrack.asJson)
+
+        val _ = result.status mustBe Status.InternalServerError
+        val resultBody = result.as[Json].unsafeRunSync()
+        val Right(expectedMsg) = parse(
+          """
+            |{
+            |  "message" : "new track could not be saved"
             |}
             |""".stripMargin)
         resultBody mustBe expectedMsg
@@ -71,7 +90,18 @@ class TrackMetadataApiSpec extends AnyWordSpec with Matchers {
     }
   }
 
+  private[this] def failedNewTrackRoute(newTrackReq: Json): Response[IO] = {
+    val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
+    val trackService = new TrackRepository[IO] {
+      override def create(newTrack: Track): IO[UUID] =
+        IO.raiseError(new RuntimeException("something went wrong"))
+      override def get(newTrack: UUID): IO[Option[Track]] = ???
+    }
+    TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)
+  }.unsafeRunSync()
+
   private[this] def newTrackRoute(newTrackReq: Json): Response[IO] = {
+    println(newTrackReq.spaces2)
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
     val trackService = TrackRepository.impl[IO]
     TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)

@@ -7,7 +7,6 @@ import music.metadata.api.domain.{Genre, Track}
 import java.util.UUID
 
 final case class NewTrackResponse(newTrackId: UUID)
-final case class NewTrackErrorResponse(message: String)
 
 final case class NewTrackRequest(title: String, genre: String, lengthInSeconds: Long, artistId: UUID)
 object NewTrackRequest {
