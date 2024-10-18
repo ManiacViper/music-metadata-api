@@ -97,7 +97,7 @@ class ArtistMetadataApiSpec extends AnyWordSpec with Matchers {
 
   private[this] def newArtistAliasesRoute(id: UUID, newArtistAliases: Json): Response[IO] = {
     val newAliasesRequest = Request[IO](Method.PATCH, uri"/artist"/id.toString).withEntity(newArtistAliases)
-    val repository = ArtistRepository.impl[IO]
+    val repository = ArtistRepository.impl[IO](ArtistRepository.existingArtists)
     val service = ArtistService.impl(repository)
     ArtistMetadataApi.routes(service).orNotFound(newAliasesRequest)
   }.unsafeRunSync()

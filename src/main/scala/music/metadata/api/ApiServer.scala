@@ -13,7 +13,7 @@ object ApiServer {
 
   def run[F[_]: Async: Network]: F[Nothing] = {
     val trackService = TrackRepository.impl[F]
-    val repository = ArtistRepository.impl[F]
+    val repository = ArtistRepository.impl[F](ArtistRepository.existingArtists)
     val artistService = ArtistService.impl[F](repository)
     val httpApp = (TrackMetadataApi.routes[F](trackService) <+> ArtistMetadataApi.routes[F](artistService)).orNotFound
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
