@@ -34,7 +34,7 @@ class GetTracksMetadataApiSpec extends AnyWordSpec with Matchers {
         val newTrackResponses: Seq[NewTrackResponse] =
           tracks.map(track => newTrackRoute(track.asJson).as[NewTrackResponse].unsafeRunSync())
 
-        val result: Response[IO] = getTracksRoute(artistId)
+        val result: Response[IO] = getTracksRoute(artistId.toString)
 
         val _ = result.status mustBe Status.Ok
         val actual = result.as[Json].unsafeRunSync()
@@ -67,7 +67,7 @@ class GetTracksMetadataApiSpec extends AnyWordSpec with Matchers {
       "artist has no tracks" in {
         implicit val repository: TrackRepository[IO] = TrackRepository.impl[IO](ArtistRepository.existingArtists.map(_.id))
         val artistId = UUID.fromString("5457804f-f9df-47e1-bc2b-250dceef9093")
-        val result: Response[IO] = getTracksRoute(artistId)
+        val result: Response[IO] = getTracksRoute(artistId.toString)
 
         val _ = result.status mustBe Status.NotFound
         val actual = result.as[Json].unsafeRunSync()
@@ -81,36 +81,37 @@ class GetTracksMetadataApiSpec extends AnyWordSpec with Matchers {
       }
     }
 
-    "return a 400" ignore {
+    "return a 400" when {
       implicit val repository: TrackRepository[IO] = TrackRepository.impl[IO](ArtistRepository.existingArtists.map(_.id))
       "artist id is invalid format" in {
-        val _ = "invalid-artist-id"
+        val invalidArtistId = "invalid-artist-id"
 
-        val result: Response[IO] = getTracksRoute(UUID.randomUUID())
+        val result: Response[IO] = getTracksRoute(invalidArtistId)
 
         val _ = result.status mustBe Status.BadRequest
         val resultBody = result.as[Json].unsafeRunSync()
         val Right(expectedMsg) = parse(
           """
             |{
-            |  "message" : "DecodingFailure at .artistId: Got value '\"invalid-artist-id\"' with wrong type, expecting string"
+            |  "message" : "Invalid UUID string: invalid-artist-id"
             |}
             |""".stripMargin)
         resultBody mustBe expectedMsg
       }
     }
 
-    "return 500" ignore {
+    "return 500" when {
       "there is an unexpected problem returning tracks" in {
 
-        val result: Response[IO] = failedGetTracksRoute(UUID.randomUUID())
+        val artistId = UUID.randomUUID()
+        val result: Response[IO] = failedGetTracksRoute(artistId)
 
         val _ = result.status mustBe Status.InternalServerError
         val resultBody = result.as[Json].unsafeRunSync()
         val Right(expectedMsg) = parse(
-          """
+          s"""
             |{
-            |  "message" : "tracks "
+            |  "message" : "something went wrong trying to retrieve tracks for artist [id=$artistId]"
             |}
             |""".stripMargin)
         resultBody mustBe expectedMsg
@@ -121,15 +122,16 @@ class GetTracksMetadataApiSpec extends AnyWordSpec with Matchers {
   private[this] def failedGetTracksRoute(artistId: UUID): Response[IO] = {
     val newTrackRequest = Request[IO](Method.GET, uri"/tracks"/ artistId)
     val failedTrackRepository = new TrackRepository[IO] {
-      override def create(newTrack: Track): IO[UUID] =
+      override def create(newTrack: Track): IO[UUID] = ???
+      override def get(artistId: UUID): IO[Seq[Track]] =
         IO.raiseError(new RuntimeException("something went wrong"))
-      override def get(artistId: UUID): IO[Seq[Track]] = ???
+
     }
     val service = TrackService.impl(failedTrackRepository)
     TrackMetadataApi.routes(failedTrackRepository, service).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
-  private[this] def getTracksRoute(artistId: UUID)(implicit repository: TrackRepository[IO]): Response[IO] = {
+  private[this] def getTracksRoute(artistId: String)(implicit repository: TrackRepository[IO]): Response[IO] = {
     val newTrackRequest = Request[IO](Method.GET, uri"/tracks"/artistId)
     val service = TrackService.impl(repository)
     TrackMetadataApi.routes(repository, service).orNotFound(newTrackRequest)

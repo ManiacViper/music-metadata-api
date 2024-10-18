@@ -3,7 +3,7 @@ package music.metadata.api
 import cats.effect.Concurrent
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-import music.metadata.api.http.model.{AppError, BodyDecodingError, DataNotFound, NewTrackRequest, NewTrackResponse, TracksResponse, TransformingError, UnexpectedError}
+import music.metadata.api.http.model.{AppError, DecodingError, DataNotFound, NewTrackRequest, NewTrackResponse, TracksResponse, TransformingError, UnexpectedError}
 import cats.syntax.functor._
 import cats.syntax.flatMap._
 import cats.syntax.either._
@@ -12,6 +12,9 @@ import io.circe.generic.auto._
 import music.metadata.api.repository.TrackRepository
 import music.metadata.api.service.TrackService
 import org.http4s.circe.CirceEntityCodec._
+
+import java.util.UUID
+import scala.util.{Failure, Success, Try}
 
 object TrackMetadataApi {
 
@@ -24,9 +27,9 @@ object TrackMetadataApi {
     HttpRoutes.of[F] {
       case req @ POST -> Root / "newtrack" =>
         for {
-          requestBodyResult <- req.as[NewTrackRequest].attemptT.leftMap { failure => BodyDecodingError(failure.getCause.getMessage)}.value
-          maybeTrackCreated = requestBodyResult.flatMap(NewTrackRequest.toNewTrack(_).leftMap(TransformingError))
-          resp <- maybeTrackCreated match {
+          requestBodyResult <- req.as[NewTrackRequest].attemptT.leftMap { failure => DecodingError(failure.getCause.getMessage)}.value
+          maybeNewTrackValidated = requestBodyResult.flatMap(NewTrackRequest.toNewTrack(_).leftMap(TransformingError))
+          resp <- maybeNewTrackValidated match {
                   case Right(newTrack) =>
                     trackRepository
                       .create(newTrack)
@@ -36,7 +39,7 @@ object TrackMetadataApi {
                       }
                   case Left(failure: AppError) =>
                     failure match {
-                      case error: BodyDecodingError =>
+                      case error: DecodingError =>
                         BadRequest(error)
                       case error: TransformingError =>
                         BadRequest(error)
@@ -48,19 +51,25 @@ object TrackMetadataApi {
                     }
                 }
         } yield resp
-      case GET -> Root / "tracks" / UUIDVar(artistId) =>
-          trackService
-            .getTracks(artistId)
-            .flatMap { tracks =>
-              if(tracks.isEmpty) {
-                NotFound(TracksResponse.from(artistId, tracks))
-              } else {
-                Ok(TracksResponse.from(artistId, tracks))
+      case GET -> Root / "tracks" / artistIdPathParam => {
+        Try(UUID.fromString(artistIdPathParam)) match {
+          case Success(artistId) =>
+            trackService
+              .getTracks(artistId)
+              .flatMap { tracks =>
+                if (tracks.isEmpty) {
+                  NotFound(TracksResponse.from(artistId, tracks))
+                } else {
+                  Ok(TracksResponse.from(artistId, tracks))
+                }
               }
-            }
-            .handleErrorWith { _ =>
-              InternalServerError(UnexpectedError(s"something went wrong trying to retrieve tracks for artist [id=$artistId]"))
-            }
+              .handleErrorWith { _ =>
+                InternalServerError(UnexpectedError(s"something went wrong trying to retrieve tracks for artist [id=$artistId]"))
+              }
+          case Failure(error) =>
+            BadRequest(DecodingError(error.getMessage))
+        }
+      }
     }
   }
 }
