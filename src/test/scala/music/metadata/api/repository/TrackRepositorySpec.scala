@@ -12,12 +12,11 @@ class TrackRepositorySpec extends AnyWordSpec with Matchers {
 
   "TrackRepository.create and .get" should {
     "store a track and return a track" when {
-      "new track is passed and we can retrieve it" in {
+      "new track is passed and we can retrieve it by artist id" in {
         val newTrack = Track(UUID.randomUUID(),"some-title", Hiphop, 100, UUID.randomUUID())
-        val repository = TrackRepository.impl[IO]
-
+        val repository = TrackRepository.impl[IO](ArtistRepository.existingArtists.map(_.id))
         val createResult = repository.create(newTrack).unsafeRunSync()
-        val Some(getResult) = repository.get(newTrack.id).unsafeRunSync()
+        val Seq(getResult) = repository.get(newTrack.artistId).unsafeRunSync()
 
         val _ = createResult mustBe newTrack.id
         getResult mustBe newTrack
@@ -25,13 +24,13 @@ class TrackRepositorySpec extends AnyWordSpec with Matchers {
     }
 
     "not retrieve a track" when {
-      "a track is not stored for an id" in {
+      "a track is not stored for an artist id" in {
         val newTrack = Track(UUID.randomUUID(),"some-title", Hiphop, 100, UUID.randomUUID())
-        val repository = TrackRepository.impl[IO]
+        val repository = TrackRepository.impl[IO](ArtistRepository.existingArtists.map(_.id))
 
-        val getResult = repository.get(newTrack.id).unsafeRunSync()
+        val getResult = repository.get(newTrack.artistId).unsafeRunSync()
 
-        getResult mustBe None
+        getResult mustBe Vector.empty
       }
     }
   }
