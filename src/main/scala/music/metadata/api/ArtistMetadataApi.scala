@@ -6,12 +6,14 @@ import org.http4s.{HttpRoutes, Response}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import io.circe.generic.auto._
-import music.metadata.api.http.model.{ArtistAliasesRequestBody, DataNotFound, DecodingError, NonFatalError, UnexpectedError}
+import music.metadata.api.http.model.{ArtistAliasesRequestBody, ArtistResponse, DataNotFound, DecodingError, NonFatalError, UnexpectedError}
 import music.metadata.api.service.ArtistService
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.Http4sDsl
 
+import java.time.LocalDate
 import java.util.UUID
+import scala.util.{Failure, Success, Try}
 
 object ArtistMetadataApi {
 
@@ -37,6 +39,15 @@ object ArtistMetadataApi {
           maybeNewArtistAliasRequest <- req.as[ArtistAliasesRequestBody].attemptT.leftMap { failure => DecodingError(failure.getCause.getMessage)}.value
           result: Response[F] <- maybeNewArtistAliasRequest.fold(error => BadRequest(error), handleSuccess(id, _))
         } yield result
+
+      case GET -> Root / "artist" / "daily" / datePathParam =>
+        Try(LocalDate.parse(datePathParam)) match {
+          case Success(date) =>
+            println(date)
+            Ok(ArtistResponse(UUID.randomUUID(), "some-artist", Seq("some-alias-1", "some-alias-2")))
+          case Failure(_) =>
+            BadRequest(DecodingError(s"[date=$datePathParam] is invalid format"))
+        }
     }
   }
 

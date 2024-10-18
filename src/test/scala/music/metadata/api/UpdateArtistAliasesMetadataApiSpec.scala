@@ -18,7 +18,7 @@ import org.http4s.circe.CirceEntityCodec._
 
 import java.util.UUID
 
-class ArtistMetadataApiSpec extends AnyWordSpec with Matchers {
+class UpdateArtistAliasesMetadataApiSpec extends AnyWordSpec with Matchers {
 
 
   "ArtistMetadataApi.routes" should {
