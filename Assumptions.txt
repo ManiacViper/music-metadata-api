@@ -6,4 +6,4 @@
     - so im assuming updating the artist aliases will be enough as an endpoint
     - also im assuming we do not want to edit the aliases that already exist in the system, only add new alias or aliases according to the specification document
 
-- artist of the day endpoint is called once a day
+- artist of the day will only change when the passed date is the next day to the stored date in the system
