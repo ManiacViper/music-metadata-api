@@ -5,23 +5,38 @@ import music.metadata.api.domain.Track
 
 import java.util.UUID
 import scala.collection.concurrent.TrieMap
-
+import cats.syntax.flatMap._
 
 trait TrackRepository[F[_]]{
   def create(newTrack: Track): F[UUID]
-  def get(newTrack: UUID): F[Option[Track]]
+  def get(artistId: UUID): F[Seq[Track]]
 }
 
 object TrackRepository {
-  private val trackMap: TrieMap[UUID, Track] = TrieMap.empty
 
-  def impl[F[_]: Sync]: TrackRepository[F] = new TrackRepository[F]{
-    def create(newTrack: Track): F[UUID] = Sync[F].delay {
-      trackMap.update(newTrack.id, newTrack)
-      newTrack.id
+  def impl[F[_]: Sync](storedArtistIds: Seq[UUID]): TrackRepository[F] = new TrackRepository[F] {
+
+    private val tracksStore: TrieMap[UUID, Vector[Track]] = storedArtistIds.foldLeft(TrieMap.empty[UUID, Vector[Track]]) { case (acc, artistId) =>
+      acc.update(artistId, Vector.empty)
+      acc
     }
 
-    override def get(newTrack: UUID): F[Option[Track]] =
-      Sync[F].delay(trackMap.get(newTrack))
+    def create(newTrack: Track): F[UUID] =
+      Sync[F].delay {
+        tracksStore.updateWith(newTrack.artistId) {
+          case Some(existingTracks: Vector[Track]) => Some(existingTracks :+ newTrack)
+          case None => Some(Vector(newTrack))
+        }
+      }.flatMap {
+        case Some(_) => Sync[F].pure(newTrack.id)
+        case None => Sync[F].raiseError(new RuntimeException(s"could not store track [id=${newTrack.id}]"))
+      }
+
+    override def get(artistId: UUID): F[Seq[Track]] =
+      Sync[F].delay(
+        tracksStore
+          .get(artistId)
+          .fold(Vector.empty[Track])(identity)
+      )
   }
 }

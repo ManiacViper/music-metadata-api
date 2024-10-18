@@ -12,7 +12,7 @@ import org.http4s.circe.CirceEntityCodec._
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import music.metadata.api.TrackMetadataApiSpec._
-import music.metadata.api.repository.TrackRepository
+import music.metadata.api.repository.{ArtistRepository, TrackRepository}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -98,7 +98,7 @@ object TrackMetadataApiSpec {
     val trackService = new TrackRepository[IO] {
       override def create(newTrack: Track): IO[UUID] =
         IO.raiseError(new RuntimeException("something went wrong"))
-      override def get(newTrack: UUID): IO[Option[Track]] = ???
+      override def get(artistId: UUID): IO[Seq[Track]] = ???
     }
     TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)
   }.unsafeRunSync()
@@ -106,8 +106,8 @@ object TrackMetadataApiSpec {
   def newTrackRoute(newTrackReq: Json): Response[IO] = {
     println(newTrackReq.spaces2)
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
-    val trackService = TrackRepository.impl[IO]
-    TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)
+    val trackRepository = TrackRepository.impl[IO](ArtistRepository.existingArtists.map(_.id))
+    TrackMetadataApi.routes(trackRepository).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
   final case class TestNewTrackRequest(title: String, genre: String, lengthInSeconds: Long, artistId: String)

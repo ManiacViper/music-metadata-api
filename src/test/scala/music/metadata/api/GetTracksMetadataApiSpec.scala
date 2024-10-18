@@ -4,6 +4,7 @@ package music.metadata.api
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import io.circe.Json
+import music.metadata.api.repository.ArtistRepository
 //import io.circe.generic.auto._
 import io.circe.parser.parse
 //import io.circe.syntax.EncoderOps
@@ -82,15 +83,15 @@ class GetTracksMetadataApiSpec extends AnyWordSpec with Matchers {
     val failedTrackRepository = new TrackRepository[IO] {
       override def create(newTrack: Track): IO[UUID] =
         IO.raiseError(new RuntimeException("something went wrong"))
-      override def get(newTrack: UUID): IO[Option[Track]] = ???
+      override def get(artistId: UUID): IO[Seq[Track]] = ???
     }
     TrackMetadataApi.routes(failedTrackRepository).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
   private[this] def getTracksRoute(artistId: UUID): Response[IO] = {
     val newTrackRequest = Request[IO](Method.GET, uri"/tracks"/artistId)
-    val trackService = TrackRepository.impl[IO]
-    TrackMetadataApi.routes(trackService).orNotFound(newTrackRequest)
+    val trackRepo = TrackRepository.impl[IO](ArtistRepository.existingArtists.map(_.id))
+    TrackMetadataApi.routes(trackRepo).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 }
 
