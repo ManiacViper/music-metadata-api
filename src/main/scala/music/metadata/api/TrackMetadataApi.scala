@@ -9,7 +9,6 @@ import cats.syntax.flatMap._
 import cats.syntax.either._
 import cats.syntax.applicativeError._
 import io.circe.generic.auto._
-import music.metadata.api.repository.TrackRepository
 import music.metadata.api.service.TrackService
 import org.http4s.circe.CirceEntityCodec._
 
@@ -18,9 +17,8 @@ import scala.util.{Failure, Success, Try}
 
 object TrackMetadataApi {
 
-  //TODO: ArtistAndTrackService - to check if artist id exists as we are assuming the artist id passed exists in the system atm
   //TODO: log any errors
-  def routes[F[_]: Concurrent](trackRepository: TrackRepository[F], trackService: TrackService[F]): HttpRoutes[F] = {
+  def routes[F[_]: Concurrent](trackService: TrackService[F]): HttpRoutes[F] = {
 
     val dsl = new Http4sDsl[F]{}
     import dsl._
@@ -31,8 +29,8 @@ object TrackMetadataApi {
           maybeNewTrackValidated = requestBodyResult.flatMap(NewTrackRequest.toNewTrack(_).leftMap(TransformingError))
           resp <- maybeNewTrackValidated match {
                   case Right(newTrack) =>
-                    trackRepository
-                      .create(newTrack)
+                    trackService
+                      .saveNewTrack(newTrack)
                       .flatMap(_ => Created(NewTrackResponse(newTrack.id)))
                       .handleErrorWith { _ =>
                         InternalServerError(UnexpectedError("new track could not be saved"))
@@ -44,7 +42,7 @@ object TrackMetadataApi {
                       case error: TransformingError =>
                         BadRequest(error)
                       //TODO: 2 tests are missing
-                      case error: DataNotFound => //planning to have an artist id check when creating a new track
+                      case error: DataNotFound =>
                         NotFound(error)
                       case _: UnexpectedError =>
                         InternalServerError(UnexpectedError("new track could not be saved"))

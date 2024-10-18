@@ -128,19 +128,19 @@ class GetTracksMetadataApiSpec extends AnyWordSpec with Matchers {
 
     }
     val service = TrackService.impl(failedTrackRepository)
-    TrackMetadataApi.routes(failedTrackRepository, service).orNotFound(newTrackRequest)
+    TrackMetadataApi.routes(service).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
   private[this] def getTracksRoute(artistId: String)(implicit repository: TrackRepository[IO]): Response[IO] = {
     val newTrackRequest = Request[IO](Method.GET, uri"/tracks"/artistId)
     val service = TrackService.impl(repository)
-    TrackMetadataApi.routes(repository, service).orNotFound(newTrackRequest)
+    TrackMetadataApi.routes(service).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
   private[this] def newTrackRoute(newTrackReq: Json)(implicit repository: TrackRepository[IO]): Response[IO] = {
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
     val service = TrackService.impl(repository)
-    TrackMetadataApi.routes(repository, service).orNotFound(newTrackRequest)
+    TrackMetadataApi.routes(service).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 }
 

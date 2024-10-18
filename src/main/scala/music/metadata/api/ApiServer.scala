@@ -16,7 +16,7 @@ object ApiServer {
     val trackService = TrackService.impl[F](trackRepository)
     val artistRepository = ArtistRepository.impl[F](ArtistRepository.existingArtists)
     val artistService = ArtistService.impl[F](artistRepository)
-    val httpApp = (TrackMetadataApi.routes[F](trackRepository, trackService) <+> ArtistMetadataApi.routes[F](artistService)).orNotFound
+    val httpApp = (TrackMetadataApi.routes[F](trackService) <+> ArtistMetadataApi.routes[F](artistService)).orNotFound
     val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
     for {

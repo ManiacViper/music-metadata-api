@@ -1,6 +1,6 @@
 package music.metadata.api.http.model
 
-sealed trait AppError {
+sealed trait AppError extends Throwable {
   val message: String
 }
 final case class DecodingError(message: String) extends AppError

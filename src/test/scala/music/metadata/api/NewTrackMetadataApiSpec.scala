@@ -103,7 +103,7 @@ object NewTrackMetadataApiSpec {
     }
     val service = TrackService.impl(trackRepository)
 
-    TrackMetadataApi.routes(trackRepository, service).orNotFound(newTrackRequest)
+    TrackMetadataApi.routes(service).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
   def newTrackRoute(newTrackReq: Json): Response[IO] = {
@@ -111,7 +111,7 @@ object NewTrackMetadataApiSpec {
     val newTrackRequest = Request[IO](Method.POST, uri"/newtrack").withEntity(newTrackReq)
     val trackRepository = TrackRepository.impl[IO](ArtistRepository.existingArtists.map(_.id))
     val service = TrackService.impl(trackRepository)
-    TrackMetadataApi.routes(trackRepository, service).orNotFound(newTrackRequest)
+    TrackMetadataApi.routes(service).orNotFound(newTrackRequest)
   }.unsafeRunSync()
 
   final case class TestNewTrackRequest(title: String, genre: String, lengthInSeconds: Long, artistId: String)
