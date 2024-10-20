@@ -16,6 +16,7 @@ object DailyArtistService {
     private var storedDate: LocalDate = LocalDate.now(ZoneOffset.UTC)
     private val artistNotFound = DataNotFound(s"artist not found")
 
+    //this does not pre-compute once when the first request comes in and stores the result, could do and write the computed value in the db or inmemory storage for the current day, was focused on solving the problem
     override def getDailyArtist(artists: Vector[Artist], date: LocalDate): Either[NonFatalError, Artist] = {
       if (date == storedDate) {
         artists.lift(currentIndex).toRight(artistNotFound) //return the same artist for the same day
