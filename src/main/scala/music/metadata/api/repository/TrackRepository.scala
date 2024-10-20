@@ -10,10 +10,12 @@ import cats.syntax.flatMap._
 trait TrackRepository[F[_]]{
   def create(newTrack: Track): F[UUID]
   def get(artistId: UUID): F[Seq[Track]]
+  def doesArtistExist(artistId: UUID): F[Boolean]
 }
 
 object TrackRepository {
 
+  //maybe track repository should take in and know about artist repository
   def impl[F[_]: Sync](storedArtistIds: Seq[UUID]): TrackRepository[F] = new TrackRepository[F] {
 
     private val tracksStore: TrieMap[UUID, Vector[Track]] = storedArtistIds.foldLeft(TrieMap.empty[UUID, Vector[Track]]) { case (acc, artistId) =>
@@ -38,6 +40,13 @@ object TrackRepository {
         tracksStore
           .get(artistId)
           .fold(Vector.empty[Track])(identity)
+      )
+
+    override def doesArtistExist(artistId: UUID): F[Boolean] =
+      Sync[F].delay(
+        tracksStore
+          .get(artistId)
+          .fold(false)(_ => true)
       )
   }
 }

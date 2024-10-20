@@ -1,7 +1,7 @@
 package music.metadata.api
 
 import cats.effect.Concurrent
-import org.http4s.HttpRoutes
+import org.http4s.{HttpRoutes, Response}
 import org.http4s.dsl.Http4sDsl
 import music.metadata.api.http.model.{AppError, DataInvalid, DataNotFound, DecodingError, NewTrackRequest, NewTrackResponse, TracksResponse, TransformingError, UnexpectedError}
 import cats.syntax.functor._
@@ -17,11 +17,29 @@ import scala.util.{Failure, Success, Try}
 
 object TrackMetadataApi {
 
-  //TODO: log any errors
+  //TODO: log any errors -
+  //ive not used the error messages from within UnexpectedError as i want client friendly messages returned back to the client and not internal error messages which i probably should log before going live
   def routes[F[_]: Concurrent](trackService: TrackService[F]): HttpRoutes[F] = {
 
     val dsl = new Http4sDsl[F]{}
     import dsl._
+
+    def handleErrors(failure: AppError): F[Response[F]] = {
+      failure match {
+        case error: DecodingError =>
+          BadRequest(error)
+        case error: TransformingError =>
+          BadRequest(error)
+        //TODO: 2 tests are missing
+        case error: DataInvalid =>
+          BadRequest(error)
+        case error: DataNotFound =>
+          NotFound(error)
+        case _: UnexpectedError =>
+          InternalServerError(UnexpectedError("new track could not be saved"))
+      }
+    }
+
     HttpRoutes.of[F] {
       case req @ POST -> Root / "newtrack" =>
         for {
@@ -32,23 +50,14 @@ object TrackMetadataApi {
                     trackService
                       .saveNewTrack(newTrack)
                       .flatMap(_ => Created(NewTrackResponse(newTrack.id)))
-                      .handleErrorWith { _ =>
-                        InternalServerError(UnexpectedError("new track could not be saved"))
+                      .handleErrorWith {
+                        case error: DataInvalid =>
+                          BadRequest(error)
+                        case _ =>
+                          InternalServerError(UnexpectedError("new track could not be saved"))
                       }
-                  case Left(failure: AppError) =>
-                    failure match {
-                      case error: DecodingError =>
-                        BadRequest(error)
-                      case error: TransformingError =>
-                        BadRequest(error)
-                      //TODO: 2 tests are missing
-                      case error: DataInvalid =>
-                        BadRequest(error)
-                      case error: DataNotFound =>
-                        NotFound(error)
-                      case _: UnexpectedError =>
-                        InternalServerError(UnexpectedError("new track could not be saved"))
-                    }
+                  case Left(failure) =>
+                    handleErrors(failure)
                 }
         } yield resp
       case GET -> Root / "tracks" / artistIdPathParam => {

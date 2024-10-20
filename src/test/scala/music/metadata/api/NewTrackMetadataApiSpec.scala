@@ -25,7 +25,8 @@ class NewTrackMetadataApiSpec extends AnyWordSpec with Matchers {
   "TrackMetadataApi.newTrack route" should {
     "return a 201" when {
       "a new track is created" in {
-        val newTrack: NewTrackRequest = NewTrackRequest("some title", Hiphop.toString, (2.minutes + 45.seconds).toSeconds, UUID.randomUUID())
+        val existingArtistId = UUID.fromString("916e2cff-a76a-45f5-b373-c49d1c46828f")
+        val newTrack: NewTrackRequest = NewTrackRequest("some title", Hiphop.toString, (2.minutes + 45.seconds).toSeconds, existingArtistId)
 
         val result: Response[IO] = newTrackRoute(newTrack.asJson)
 
@@ -35,6 +36,24 @@ class NewTrackMetadataApiSpec extends AnyWordSpec with Matchers {
     }
 
     "return a 400" when {
+
+      "artist not found for track" in {
+        val nonExistentArtistId = UUID.randomUUID()
+        val newTrack: NewTrackRequest = NewTrackRequest("some title", Hiphop.toString, (2.minutes + 45.seconds).toSeconds, nonExistentArtistId)
+
+        val result: Response[IO] = newTrackRoute(newTrack.asJson)
+
+        val _ = result.status mustBe Status.BadRequest
+        val resultBody = result.as[Json].unsafeRunSync()
+        val Right(expectedMsg) = parse(
+          s"""
+            |{
+            |  "message" : "[artistId=$nonExistentArtistId] does not exist"
+            |}
+            |""".stripMargin)
+        resultBody mustBe expectedMsg
+      }
+
       "genre is not supported" in {
         val unsupportedGenre = "Jazz"
         val newTrack: NewTrackRequest =
@@ -100,6 +119,8 @@ object NewTrackMetadataApiSpec {
       override def create(newTrack: Track): IO[UUID] =
         IO.raiseError(new RuntimeException("something went wrong"))
       override def get(artistId: UUID): IO[Seq[Track]] = ???
+      override def doesArtistExist(artistId: UUID): IO[Boolean] =
+        IO.pure(true)
     }
     val service = TrackService.impl(trackRepository)
 
