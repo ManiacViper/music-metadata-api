@@ -32,6 +32,7 @@ class NewTrackMetadataApiSpec extends AnyWordSpec with Matchers {
 
         val _ = result.status mustBe Status.Created
         isValidTrackId(result) mustBe true
+        //this would check the test db ideally if its stored to pass the test
       }
     }
 
