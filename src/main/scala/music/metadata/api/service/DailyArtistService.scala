@@ -12,6 +12,7 @@ object DailyArtistService {
 //  private val maxIndex = artists.size - 1
 
   def impl(): DailyArtistService = new DailyArtistService {
+    //these vars would be in a storage somewhere but ive kept them here as its a prototype
     private var currentIndex = 0
     private var storedDate: LocalDate = LocalDate.now(ZoneOffset.UTC)
     private val artistNotFound = DataNotFound(s"artist not found")
