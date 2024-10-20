@@ -125,7 +125,7 @@ class GetTracksMetadataApiSpec extends AnyWordSpec with Matchers {
       override def create(newTrack: Track): IO[UUID] = ???
       override def get(artistId: UUID): IO[Seq[Track]] =
         IO.raiseError(new RuntimeException("something went wrong"))
-
+      override def doesArtistExist(artistId: UUID): IO[Boolean] = ???
     }
     val service = TrackService.impl(failedTrackRepository)
     TrackMetadataApi.routes(service).orNotFound(newTrackRequest)

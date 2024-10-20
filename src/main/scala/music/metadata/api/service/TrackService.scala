@@ -4,7 +4,9 @@ import cats.effect.Sync
 import music.metadata.api.domain.Track
 import music.metadata.api.repository.TrackRepository
 import cats.syntax.functor._
+import cats.syntax.flatMap._
 import cats.syntax.applicativeError._
+import music.metadata.api.http.model.{DataInvalid, UnexpectedError}
 
 import java.util.UUID
 
@@ -19,13 +21,21 @@ object TrackService {
     override def getTracks(artistId: UUID): F[Seq[Track]] =
       trackRepository.get(artistId)
 
-    //TODO: an artist id check when creating a new track - DataNotFound
-    override def saveNewTrack(newTrack: Track): F[Unit] =
+    override def saveNewTrack(newTrack: Track): F[Unit] = {
       trackRepository
-        .create(newTrack)
-        .map(_ => ())
-        .handleErrorWith { _ =>
-          Sync[F].raiseError(new RuntimeException("new track could not be saved"))
+        .doesArtistExist(newTrack.artistId)
+        .flatMap { artistExists =>
+          if(artistExists) {
+            trackRepository
+              .create(newTrack)
+              .map(_ => ())
+              .handleErrorWith { _ =>
+                Sync[F].raiseError(UnexpectedError("new track could not be saved"))
+              }
+          } else {
+            Sync[F].raiseError(DataInvalid(s"[artistId=${newTrack.artistId}] does not exist"))
+          }
         }
+    }
   }
 }
